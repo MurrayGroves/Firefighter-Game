@@ -2,40 +2,40 @@ canvasWidth = 0;
 canvasHeight = 0;
 canvasSize = 0;
 
-windows = [];
+windows = []; // List of all window positions
 events = []; // List of all events to be checked every frame, and how often they want to be run (in frames)
-fires = [null,null,null,null,null,null,null,null,null,null,null];
-frames = 0;
+fires = [null,null,null,null,null,null,null,null,null,null,null]; // List of all windows and what they have in them
+frames = 0; // Counter of how many frames have been run
 
-beingSolved = -1;
-answerCooldown = 0;
-correctAnswer = -1;
-question = "";
-answer = 0;
-answer1 = 0;
-answer2 = 0;
-answer3 = 0;
-showAnswer = 0;
+beingSolved = -1; // What window is currently being solved
+answerCooldown = 0; // How long (in frames) before an answer can be clicked again
+correctAnswer = -1; // What answer (either 1,2,3) is correct
+question = ""; // The current question
+answer = 0; // The value of the correct answer
+answer1 = 0; // The value of the first answer choice
+answer2 = 0; // The value of the second answer choice
+answer3 = 0; // The value of the third answer choice
+showAnswer = 0; // How long (in frames) to highlight the correct answer
 
-score = 0;
-sprinklerCooldown = 0;
+score = 0; // The player's score
+sprinklerCooldown = 0; // How long (in frames) before the player can use the sprinkler again
 
-splashProgress = -1;
-splashTarget = 0;
-splashes = [];
-sprinklerSplashes = [];
-splashTargetX = 0;
-splashTargetY = 0;
+splashProgress = -1; // How far the splash animation has progressed
+splashTarget = 0; // Which window the splash is targeted at
+splashes = []; // A list of splash sprites
+sprinklerSplashes = []; // A list of all splash sprites used by the sprinkler
+splashTargetX = 0; // The X position of the splash target
+splashTargetY = 0; // The Y position of the splash target
 
-fireToRemove = -1;
+fireToRemove = -1; // Which fire is to be removed after the splash is over
 
-catTimer = 0;
-catPos = -1;
+catTimer = 0; // How long until the cat dissapears (in frames)
+catPos = -1; // What window the cat is in
 
-doFireTutorial = true;
-doSprinklerTutorial = true;
-doCatTutorial = true;
-doAnswerTutorial = true;
+doFireTutorial = true; // Whether the fire tutorial still needs to be done
+doSprinklerTutorial = true; // Whether the sprinkler tutorial still needs to be done
+doCatTutorial = true; // Whether the cat tutorial still needs to be done
+doAnswerTutorial = true; // Whether the answer tutorial still needs to be done
 
 // Preload images
 function preload(){
@@ -43,6 +43,7 @@ function preload(){
   fireImg = loadImage("assets/fire.png")
   splashImg = loadImage("assets/droplet.png")
   catImg = loadImage("assets/cat.png")
+  firefighterImg = loadImage("assets/firefighter.png")
 
   song = loadSound("assets/burn.mp3")
   song.setLoop(true);
@@ -76,30 +77,38 @@ function setup() {
 
   canvasSize = canvasHeight/1000;
 
+  // Define a list with the X and Y positions of all windows
   windows =[[276,390],[366,390],[455,390],[276,539],[366,539],[455,539],[276,707],[366,707],[455,707],[276,887],[366,887]]
 
+  // Modify window positions to account for downscaling of canvas
   for (i=0;i<11;i++){
     windows[i][0] = windows[i][0]*canvasSize;
     windows[i][1] = windows[i][1]*canvasSize;
   }
   createCanvas(canvasWidth, canvasHeight);
 
+  // Create collider sprites over the answer positions
   answer1Collider = createSprite(canvasWidth/4,2*canvasHeight/3,125,50)
   answer2Collider = createSprite(2*canvasWidth/4,2*canvasHeight/3,125,50)
   answer3Collider = createSprite(3*canvasWidth/4,2*canvasHeight/3,125,50)
 
+  // Make the collider sprites invisible
   answer1Collider.visible = false;
   answer2Collider.visible = false;
   answer3Collider.visible = false;
 
+  // Create an invisible sprite that will follow the cursor (to check if the cursor is touching any colliders)
   cursor = createSprite(0,0,1,1);
   cursor.visible = false;
 
+  // Create an invisible sprite that will act as a button for the sprinkler
   sprinklerCollider = createSprite(3+canvasWidth/7,3+canvasHeight/20,canvasWidth/3.5,canvasHeight/10);
   sprinklerCollider.visible = false;
 
+  // Start the background music
   song.play();
 
+  // Create the splash animation sprites
   start = [canvasWidth/2, canvasHeight];
   for (i=0;i<5;i++){
     splash = createSprite(start[0]*(1+0.1*i),start[1]*(1+0.1*i),1,1)
@@ -109,6 +118,7 @@ function setup() {
     splashes.push(splash);
   }
 
+  // Create the sprinkler animation sprites
   for (i=0;i<500;i++){
     splash = createSprite(start[0]*(1+0.1*i),start[1]*(1+0.1*i),1,1)
     splash.addImage(splashImg);
@@ -117,11 +127,16 @@ function setup() {
     sprinklerSplashes.push(splash);
   }
 
+  // Create the cat sprite
   cat = createSprite(0,0,1,1);
   cat.addImage(catImg);
   cat.visible = false;
   cat.scale = 0.4;
 
+  firefighter = createSprite(canvasWidth*0.6,canvasHeight-60);
+  firefighter.addImage(firefighterImg);
+
+  // Check if the tutorial has been completed before
   doTutorialVar = getItem("doTutorial");
   if (doTutorialVar == true || doTutorialVar == null){
     doTutorial = true;
@@ -267,7 +282,7 @@ function mousePressed(event){
           showAnswer = 30;
         }
         catch{
-          sprinklerCooldown = 30*60
+          sprinklerCooldown = 60*60
           doSprinklerTutorial = false;
           storeItem("doTutorial",false)
           beingSolved = -1;
